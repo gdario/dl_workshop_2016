@@ -1,0 +1,58 @@
+* Deep Learning for Pharma and Agri-Food workshop
+
+** Pierre Baldi 
+
+*** Intro
+- ML starts with Gauss. Today we try to do something similar, but with highly non-linear functions and in much higher dimensional spaces.
+- Older approaches. Rosenblatt, Fukushima and [[https://en.wikibooks.org/wiki/Artificial_Neural_Networks/Hebbian_Learning][Hebbian Learning]].
+- Computer vision: error rate from 30% to 4.9% (superhuman performance)
+
+*** TODO DL
+- First experiments, 1 layer
+- 1.5 layers (is this correct?!?). Apparently equivalent to [[https://en.wikipedia.org/wiki/Johnson%E2%80%93Lindenstrauss_lemma][Johnson-Lindenstrauss Lemma]] and random projections.
+- 2 layers: autoencoders, where the network tries to recreate the input without just learning to copy it. If the functions are linear, the problem is convex and we obtain the PCA. If the functions are non-linear (as it usually is), the problem is non convex, and we obtain non linear manifolds.
+- Note: non-convexity does not imply a large number of local minima. Mostly we have saddle points. Intuitively, this happens because it is highly unlikely to have a local minumum for all the dimensions in a highly dimensional space.
+- Back-propagation is not the only way to learn the parameters of a network, but there is no need to look elsewhere, since it is actually optimal, in the sense that it takes the smallest number of operations. This applies to MLP and to RNNs as well.
+
+*** More into DL
+Two types of architectures.
+- CNNs, where inputs have the same size.
+- RNNs(? I haven't recorded it), where inputs have different sizes. Examples include DNA, proteins etc
+
+*** TODO Inner and outer approaches for RNNs 
+- Inner :: The input graph must be acyclic. The inner approach "crawls" along the edges
+- Outer :: The RNN is perpendicular to the data (is this the typical network where you have an unfolded graph? It looked like the first example was actually such a thing)
+
+*** Applications
+Three main areas of application: 1) Biology, 2) Chemistry, 3) Physics.
+
+**** Biology
+Prediction of protein secondary and tertiary structures. Here the challenge is to predict the amino-acids that are far apart on the linear sequence, but close to each other in the folded 3D structure. An important concept here is a [[https://en.wikipedia.org/wiki/Protein_contact_map][Contact Map]] which represents the distance between all possible amino acid residue pairs of a three-dimensional protein structure using a binary two-dimensional matrix. If one can predict accurately a contact map, then he or she can accurately predict the 3D structure. In 1999 they published a paper, [[http://www.ncbi.nlm.nih.gov/pubmed/10743560][Baldi, Pollastri 1999]] where the prediction accuracy was 78%. In 2014 they published another paper [[http://www.ncbi.nlm.nih.gov/pubmed/24860169][Magnan, Baldi 2014]], where the accuracy is 95% and they claim that the problem is solved. Baldi says that one cannot get 100% due to the errors in the databases and the lack of chaperones.
+They also applied a method for the prediction of contact maps. Here they have a sliding window that is moving in four directions. He cited two papers on this: [[http://www.jmlr.org/papers/volume4/baldi03a/baldi03a.pdf][Baldi, Pollastri 2003]] and, more recently, [[http://www.ncbi.nlm.nih.gov/pmc/articles/PMC3463120/][Di Lena, Nagata, Baldi 2012]]. Here the accuracy is much lower, 20-30%. These methods were used for the Critical Assessment of Techniques for Protein Structure Prediction ([[http://predictioncenter.org][CASP)]] competition.
+
+**** Chemistry
+We have many representations of small molecules properties, for example Smiles, fingerprints etc. Fingerprints are typically fixed vectors of 1e04-1e05 features, and they are very sparse. One may want to find compressed representations of these features, for example using autoencoders. If you have data of variable size, then you must use RNNs. The challenge is that there is no canonical orientation for a molecule, and one may want to take all the possible orientations. This is what is done in [[http://www.ncbi.nlm.nih.gov/pubmed/23795551][Lusci, Pollastri, Baldi 2013]] where they predict the aqueous solubility of drug-like molecules. In this work they use the *inner approach*, while [[https://papers.nips.cc/paper/5954-convolutional-networks-on-graphs-for-learning-molecular-fingerprints.pdf][Duvenaud et al 2015]] use the outer approach.
+
+One final example he showed was the *prediction of chemical reactions*. In [[http://www.ncbi.nlm.nih.gov/pubmed/19719121][Chen, Baldi 2009]] they develop a rule-based approach. They went on training a *siamese architecture*, as described in [[http://pubs.acs.org/doi/abs/10.1021/ci200207y][Kayala, Azencott 2011]].
+
+
+** Hugo Ceulemans (Janssen)
+
+*** CAPE: Compound Activity Prediction Effort
+- Resources :: CHEMBL, OpenTox, ABCD, GSSTAR, Thomson-Reuters
+- Various feature sets: 2D and 3D fingerprints. Biological assays. In particular they have a collaboration with a company called [[http://genometry.com][Genometry]] specialized in L1000. A brief description of the technology can be found [[http://genometry.com/#technology][here]].
+
+*** TODO add something about the technology and the company
+
+**** Rationale
+1. Select compounds for screens.
+2. Annotate hit series to (de) prioritize compounds.
+3. Hypotheses generation about the compounds.
+
+They have single label vs. multi-label and single assay vs. multi-assay problems, but the idea is to do something similar to what Google did in the [[http://arxiv.org/pdf/1502.02072.pdf][Massively Multi-Task Nets paper]] and as briefly described on [[http://googleresearch.blogspot.ch/2015/03/large-scale-machine-learning-for-drug.html][Google Blog]].
+They use [[http://arxiv.org/abs/1509.04610][MACAU]], a Scalable Bayesian Multi-relational Factorization with Side Information using MCMC.
+
+More in general, Jenssen has a collaboration with Sepp Hochreiter and Yives Moreau, who are acting as consultants on a couple of projects. Ceulemans referred to the papers (from Hochreiter's grop) on [[http://www.bioinf.jku.at/publications/2014/NIPS2014a.pdf][Virtual Screenings]] and toxicity prediction like in [[http://journal.frontiersin.org/article/10.3389/fenvs.2015.00080/full][Mayr et al 2016]] and [[http://arxiv.org/pdf/1503.01445v1.pdf][Unterthiner et al 2015]].
+
+Something that is currently ongoing: they have historic data on translocation of a nuclear receptor, 6 images for each of 500K compounds (15 TB of data), 3 channels. They used [[http://cellprofiler.org][Cell Profiler]] from the Broad Institute to perform cell segmentation and they extract 841 morphological features.
+Combining the imaging screen, segmentation, MACAU they obtain 30 virtual screens.
