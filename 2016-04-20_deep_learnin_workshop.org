@@ -56,3 +56,68 @@ More in general, Jenssen has a collaboration with Sepp Hochreiter and Yives More
 
 Something that is currently ongoing: they have historic data on translocation of a nuclear receptor, 6 images for each of 500K compounds (15 TB of data), 3 channels. They used [[http://cellprofiler.org][Cell Profiler]] from the Broad Institute to perform cell segmentation and they extract 841 morphological features.
 Combining the imaging screen, segmentation, MACAU they obtain 30 virtual screens.
+
+*Quite a bit of information missing here. I did not get many of the details. If someone had got something more in his notes, this would be great*
+
+** Djork-Arne' Clevert - Decoding Biological Data with Rectified Factor Networks (RFN)
+
+He's an ex student of Sepp Hochreiter's. RFNs are work done mostly when he was at the Johannes Kepler University in Linz. Among other topics, he mentioned a modified version of the rectified linear units (ReLUs) that can speed up learning in deep neural networks (DNNs). These are the [[http://arxiv.org/abs/1511.07289][Exponential Linear Units.]] However the main topic of the talk were the Rectified Factor Networks (resources can be found in [[http://arxiv.org/abs/1502.06464][Clevert 2015]], [[http://arxiv.org/abs/1502.06464][Clevert (NIPS)]], and in [[http://www.bioinf.jku.at/publications/2014/NIPS2014b.pdf][RFNs and Dropout]]). The code can be downloaded from [[https://github.com/untom/librfn][GitHub]], and it compiles on a MacBook Pro (Yosemite) with CUDA installed. I had issues on El Capitan, but it should be reasonably easy to fix.
+
+RFNs are somewhat like an autoencoder, in the sense that they try to reconstruct the input they receive, without learning just to copy it to the output. Therefore, an autoencoder is forced to learn a representation that contains the essential features of the input, discarding the inessential ones. The main goals of the RFN (as stated in the papers) is to "Our goal is to construct representations of the input that (1) are sparse, (2) are non-negative, (3) are non-linear, (4) use many code units, and (5) model structures in the input". The non-negativity here is along the lines of what is done in [[https://en.wikipedia.org/wiki/Non-negative_matrix_factorization][Non-Negative Matrix Factorization.]]
+
+Clevert generated a synthetic dataset of 100 samples and 100 features and injected biclusters in it (details?), and tested a number of unsupervised methods measuring 1) sparseness, 2) reconstruction error and 3) model covariance (not sure I understand what is meant here).
+
+PUT THE CONCLUSION OF THIS ANALYSIS HERE
+
+*** Pre-training DNNs with RFNs
+They used RFN as a pre-training for deep neural networks. They compare the performance of a DNN pre-trained with an RFN with an SVM and with DNNs pre-trained with other methods, including Restricted Boltzmann Machines (RBM), Stacked Auto-Encoders (SAE), Stacked Denoising Auto-Encoders (SDAE), Deep Belief Networks (DBN). In almost all cases (they test on multiple data-sets), the DNN pre-trained with the RNF outperforms the other methods.
+
+*** Applications to Drug Discovery
+One of the main goals of this method is to produce a sparse representation of a data-set that still effectively allows to identify rare events. 
+
+*** Deep Learning @ Bayer
+They use DL and RFNs for large HCS, CNNs are used on histopath. images. Prediction of bioactivity using molecular fingerprints, off-target prediction and other things.
+
+**** Gene Expression Landscape (work done with or by Helge Roider)
+The have 40.000 microarrays, all Affymetrix, and they have done a hierarchical annotation, categorizing the arrays into 12 classes (tissue types, if I understand correctly). Within each category there are sub-category that can refer to pathologies or more specific annotations. All the data have been summarized with [[https://www.bioconductor.org/packages/3.3/bioc/vignettes/farms/inst/doc/farms.pdf][FARMS]], a Bioconductor package developed by Clevert and based on Factor Analysis. They removed the non-informative genes (~10%) and ran RFN with 50(? in the paper they say 500) hidden units, 30% "salt and pepper noise" and 5% dropout. They obtain a representation that is then plotted using t-SNE and they see some separation across the 12 classes.
+
+**** Decoding Copy Number Variants
+They have a set of 400 Affymetrix chips (SNP arrays or copy number, or hybrid, I don't know). The data set is smaller, but they apply something similar to what they did in the previous case. In my notes I cannot find anything else, so I guess he did not show any results beyond a couple of t-SNE plots.
+
+
+** Gerard Van Westen: Target Prediction, QSAR, PCM
+
+He was a a PostDoc at the EBI, where he worked on simulation-based bioactivity modeling using GPUs (and actually building the first instances at the EBI).
+
+He is working now on the prediction of compound-protein interactions, trying to explain the polypharmacologycal effects. His starting point is ChEMBL, which contains 14 million data points. However, if one is interested only in high-quality data points, you can only use 3% of the data set, i.e. 400,000 data points.
+
+*** In Silico Target Fishing
+It is typical to choose a threshold of 10uM to call something active. According to this criterion, 90% of the high quality data points are active. They put the threshold to 300nM, and this now changes the balance of active/inactive into something closer to 50% (not exactly, but not too far, and I don't have the precise numbers). They extract the circular fingerprints and some other physical properties for the molecules, while for the proteins they divide them into 20 equal parts (uh?)
+
+They compare Naive Bayes (NB), Random Forest binary class QSAR (BC_QSAR), Random Forest multi class QSAR (MC-QSAR), Multi Class Deep Neural Nets (MC-DNN) and Proteochemometric Deep Neural Networks (PCM-DNN) using both open source reources (RDKIT, Theano, Lasagne, Scikit-Learn) and commercial software (Pipeline Pilot + R) on a standardized high quality ChEMBL subset that is available for download (WHERE?). All methods are validated using [[https://en.wikipedia.org/wiki/Matthews_correlation_coefficient][Matthews Correlation Coefficient]]. They use two partitioning schemes for validation: random partitioning and partitioning by year (training=pre 2013 and validation from 2013 on). The rationale being that this can be a more realistic representation of what happens in prospective virtual screenings. ChEMBL contains compound series, and this suggests that taking advantage of the prospective nature of the studies can be more realistic and remove some biases.
+
+When using the random partitioning, the best performing method is MC-DNN (MCC=0.66), with the PCM-DNN immediately close (MCC=0.64). When they use the "year split" (as they call it) the performance deteriorates significantly. In the Sheffield abstact the best MCC is about .4 but the numbers Gerard showed were more around MCC~0.2.
+
+*** Observations
+Overall he had 63 models, and he noted that averaging multiple models produces the best performance. Apparently he just used plain multi-layered perceptrons, and he is planning now to use RBMs, CNNs and RNNs. Hochreiter said that he would *not* accept this work for publication because he is convinced that there are still serious biases. In particular he pointed out that Gerard should first cluster the compounds (and what about the proteins? I haven't written anything about this) and select representatives removing compounds that are too similar to each other, as this would make the results look better than they would actually be.
+
+
+** Sepp Hochreiter, Johannes Kepler Universitaet
+
+He gave an introduction to the main challenge associated with deep neural networks, i.e. the vanishing/exploding gradient problem. 
+The other problem, not unrelated, is volume deformation. The result is that you end up storing all you information in one single neuron, and/or one neuron decides for all the others.
+If one can keep the determinant of the Jacobian matrix around 1, things are OK, since this correspond to a transformation that conserves the volume between the original and the transformed space, and doesn't lead to vanishing or exploding gradients. Some solutions to these problem, from an historically perspective, have been:
+1. Pre-training (Hinton 2006)
+2. Rectified Linear Units: the have a derivative of 1, which means that the gradient is in the right region, especially if weights are properly initialized. They have essentially replaced pre-training.
+3. LSTM: this works on recurrent neural networks, and has been introduced by Hochreiter and Schmidthuber
+4. A new one is [[https://arxiv.org/abs/1505.00387][Highway Networks]] which finds clever ways to let information circulate through the network. Another one are Residual Networks (resource can be found in [[http://arxiv.org/abs/1512.03385][He et al 2015]], [[http://arxiv.org/abs/1603.05027][He et al 2016]], on [[https://github.com/KaimingHe/resnet-1k-layers][GitHub]], on [[http://research.microsoft.com/en-us/um/people/kahe/ilsvrc15/ilsvrc2015_deep_residual_learning_kaiminghe.pdf][Microsoft Research]]. Here they have architectures with 150 and even 1000 layers. At the moment, ResNet is the state of the art for image recognition.
+
+The general principle therefore is to compute an output like $\mathbf{y} = \mathbf{x} + F(\mathbf{x})$, where the Jacobian would then be $\frac{\partial{\mathbf{y}}}{\partial \mathbf{x}} = \mathbf{I} + \frac{\partial F(\mathbf{x})}{\partial \mathbf{x}}$
+
+Minibatch learning has a self-regularizing effect. You always have different errors, but to make things work, you need *a lot* of data.
+
+*** DL for Drug Design
+Are there enough data? Not clear. Hochreiter says that pharma companies should find a way to put together their data (Ceulemans said something in this direction). One of the main problems is that the inactive compounds are usually not part of the datasets, or not enough, and this is a big limitation.
+
+*** Target Deconvolution
+You have drugs, target phenotypes, you observe the phenotype and you want to know what the target was. They use CNNs on HCSs for this. You can look at [[http://user2015.math.aau.dk/presentations/92.pdf][Ceuleman's slides]]
