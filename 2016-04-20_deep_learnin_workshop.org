@@ -104,12 +104,11 @@ Overall he had 63 models, and he noted that averaging multiple models produces t
 
 ** Sepp Hochreiter, Johannes Kepler Universitaet
 
-He gave an introduction to the main challenge associated with deep neural networks, i.e. the vanishing/exploding gradient problem. 
-The other problem, not unrelated, is volume deformation. The result is that you end up storing all you information in one single neuron, and/or one neuron decides for all the others.
-If one can keep the determinant of the Jacobian matrix around 1, things are OK, since this correspond to a transformation that conserves the volume between the original and the transformed space, and doesn't lead to vanishing or exploding gradients. Some solutions to these problem, from an historically perspective, have been:
-1. Pre-training (Hinton 2006)
+He gave an introduction to the main challenge associated with deep neural networks, i.e. the vanishing/exploding gradient problem. The other problem, not unrelated, is volume deformation. The result is that you end up storing all you information in one single neuron, and/or one neuron decides for all the others.
+If one can keep the determinant of the Jacobian matrix around 1, things are OK, since this correspond to a transformation that conserves the volume between the original and the transformed space, and doesn't lead to vanishing or exploding gradients. Some solutions to these problems, from an historical perspective, have been:
+1. Pre-training (Hinton 2006), for example with Denoising Autoencoders or Restricted Boltzmann Machines
 2. Rectified Linear Units: the have a derivative of 1, which means that the gradient is in the right region, especially if weights are properly initialized. They have essentially replaced pre-training.
-3. LSTM: this works on recurrent neural networks, and has been introduced by Hochreiter and Schmidthuber
+3. LSTM: this works on recurrent neural networks, and has been introduced by Hochreiter and Schmidhuber
 4. A new one is [[https://arxiv.org/abs/1505.00387][Highway Networks]] which finds clever ways to let information circulate through the network. Another one are Residual Networks (resource can be found in [[http://arxiv.org/abs/1512.03385][He et al 2015]], [[http://arxiv.org/abs/1603.05027][He et al 2016]], on [[https://github.com/KaimingHe/resnet-1k-layers][GitHub]], on [[http://research.microsoft.com/en-us/um/people/kahe/ilsvrc15/ilsvrc2015_deep_residual_learning_kaiminghe.pdf][Microsoft Research]]. Here they have architectures with 150 and even 1000 layers. At the moment, ResNet is the state of the art for image recognition.
 
 The general principle therefore is to compute an output like $\mathbf{y} = \mathbf{x} + F(\mathbf{x})$, where the Jacobian would then be $\frac{\partial{\mathbf{y}}}{\partial \mathbf{x}} = \mathbf{I} + \frac{\partial F(\mathbf{x})}{\partial \mathbf{x}}$
@@ -120,4 +119,24 @@ Minibatch learning has a self-regularizing effect. You always have different err
 Are there enough data? Not clear. Hochreiter says that pharma companies should find a way to put together their data (Ceulemans said something in this direction). One of the main problems is that the inactive compounds are usually not part of the datasets, or not enough, and this is a big limitation.
 
 *** Target Deconvolution
-You have drugs, target phenotypes, you observe the phenotype and you want to know what the target was. They use CNNs on HCSs for this. You can look at [[http://user2015.math.aau.dk/presentations/92.pdf][Ceuleman's slides]]
+You have drugs, target phenotypes, you observe the phenotype and you want to know what the target was. They use CNNs on HCSs for this. You can look at [[http://user2015.math.aau.dk/presentations/92.pdf][Ceuleman's slides]].
+
+*** Toxicity Prediction
+    Hochreiter's group participated in the [[https://tripod.nih.gov/tox21/challenge/][Tox21 Challenge 2014]] and won the large majority of the challenges. The most significant papers of the Hochreiter's group in chemoinformatics are [[http://www.bioinf.jku.at/publications/2014/NIPS2014a.pdf][Unterthiner et al. 2014]], [[http://arxiv.org/abs/1503.01445][Unterthiner et al. 2015]], [[http://journal.frontiersin.org/article/10.3389/fenvs.2015.00080/full][Mayr et al. 2016]]. One of the main ideas is [[https://en.wikipedia.org/wiki/Multi-task_learning][Multi-task Learning]], where different networks receive different types of inputs, for example if different assays have been performed on the same compound, and aggregate these networks in one or more common hidden layer that learns more abstract and general representations of the data.
+
+One point where I am somewhat confused is the fact that, on one hand, Hochreither re-stated the necessity to cluster the compounds and found a representative for very similar structures. On the other hand, he referred to the problem due to *activity cliffs*, where two compounds, or groups of compounds, can have very similar structure and still show large differences in potency. It is not clear to me whether Hochreiter was referring to supervised clustering or not.
+
+*** Image analysis
+They have applied DL on a number of HCS. One of the challenges is the large number of images that one need to annotate. Astra Zeneca used the [[https://www.mturk.com/mturk/welcome][Amazon Mechanical Turk]] to annotate (what? Images or patents? I can't remember, but the idea is similar). Hochreiter said they do not image segmentation, but rather they submit the whole image to the network. 
+
+
+** Oliver Stegle: Deep Learning in Regulatory Genomics
+The ML part of this work was performed by Christof Angermueller, who is (was) a student of Gharhamani. The main topic of the talk is the analysis of the data described in [[https://cangermueller.com/wp-content/papercite-data/pdf/angermueller_parallel_2016.pdf][Angermueller et al. 2016]]. In this work they profile 61 mouse embryonic stem cells both from the transcriptional and epigentic point of view. They produce methylomes and transcriptomes from the same cells, but the amount of material is very low, and this implies a lot of zeros in the expression count matrix, and a lot of NAs in the methylome matrix (I guess in both cases they should be considered as missing values, as the zeroes in the expression count matrix are presumably PCR dropouts). Thera are models for the imputations of the methylation status, but they tend to be slow or inefficient. Here they develop a multi-task network that makes use of both the transcriptome and the methylome.
+
+More precisely, they develop a multi=task deep neural network to jointly predict the mehtylation of multiple cells from more than 10000 genomic, epigenomic and physiochemical features. The network infers bot shared and cell-specific latent features and uses a novel dropout approach. Therefore they have one CNN for the transcriptome and one for the methylome and then they have one or more fully connected layers above. The larger the "windows" (I guess the convolutional kernels) the better the AUC, suggesting that the broader context is taken into account, the better. The method is called DeepCpG, but I could not find anything yet.
+
+They are also building up a similar system that tries to predict (but I'm not sure I have recorded this correctly), methylation level and methylation variance/variablilty. This is somehow connected to the identification of motifs that are predictive of cell heterogenieity. The motifs are from the first hidden layer, and Stegle compares them with an "edge detector" in a CNN for image classification. 
+
+** Other things
+- [[http://homes.cs.washington.edu/~pedrod/papers/nips14.pdf][Deep Symmetry Networks]]
+- Ceulemans' project for data sharing. Uwe has better notes on this.
